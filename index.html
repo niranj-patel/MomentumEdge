@@ -281,6 +281,17 @@ body{background:var(--me-bg);color:#0F172A;font-size:14px}
           <span id="tab-sip-badge" style="display:none;position:absolute;top:4px;right:6px;
                 width:8px;height:8px;border-radius:50%;background:#DC2626;border:1.5px solid #fff"></span>
         </a>
+        <a href="#" onclick="setTab('planner');return false"
+           id="tab-planner"
+           data-bs-toggle="tooltip" data-bs-placement="bottom" title="Trade Planner"
+           style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                  padding:6px 10px;border-radius:10px;text-decoration:none;
+                  color:#94A3B8;min-width:44px;position:relative;transition:all .15s;
+                  border:none;background:transparent;cursor:pointer;flex-shrink:0">
+          <i class="bi bi-calculator" style="font-size:18px"></i>
+          <span id="tab-planner-badge" style="display:none;position:absolute;top:4px;right:6px;
+                width:8px;height:8px;border-radius:50%;background:#DC2626;border:1.5px solid #fff"></span>
+        </a>
         <a href="#" onclick="setTab('screener');return false"
            id="tab-screener"
            data-bs-toggle="tooltip" data-bs-placement="bottom" title="Screener"
@@ -304,6 +315,17 @@ body{background:var(--me-bg);color:#0F172A;font-size:14px}
                 width:8px;height:8px;border-radius:50%;background:#DC2626;border:1.5px solid #fff"></span>
         </a>
         <div style="width:1px;height:28px;background:#E3E8F0;margin:0 4px;flex-shrink:0"></div>
+        <a href="#" onclick="setTab('crypto');return false"
+           id="tab-crypto"
+           data-bs-toggle="tooltip" data-bs-placement="bottom" title="Crypto Screener"
+           style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                  padding:6px 10px;border-radius:10px;text-decoration:none;
+                  color:#94A3B8;min-width:44px;position:relative;transition:all .15s;
+                  border:none;background:transparent;cursor:pointer;flex-shrink:0">
+          <i class="bi bi-currency-bitcoin" style="font-size:18px"></i>
+          <span id="tab-crypto-badge" style="display:none;position:absolute;top:4px;right:6px;
+                width:8px;height:8px;border-radius:50%;background:#D97706;border:1.5px solid #fff"></span>
+        </a>
         <a href="#" onclick="setTab('etf');return false"
            id="tab-etf"
            data-bs-toggle="tooltip" data-bs-placement="bottom" title="ETF Portfolio"
@@ -559,7 +581,57 @@ const ETF_UNIVERSE = [
   {ticker:'GDXJ', sector:'Gold Miners',    name:'Junior Gold Miners'},
 ];
 
+// ── Crypto Universe — Top coins by market cap + AI sector ───────────────────
+const CRYPTO = [
+  // Mega Cap
+  {symbol:'BTC/USD',     name:'Bitcoin',          cat:'Mega Cap'},
+  {symbol:'ETH/USD',     name:'Ethereum',         cat:'Mega Cap'},
+  {symbol:'BNB/USD',     name:'BNB',              cat:'Mega Cap'},
+  {symbol:'SOL/USD',     name:'Solana',           cat:'Mega Cap'},
+  {symbol:'XRP/USD',     name:'XRP',              cat:'Mega Cap'},
+  // Large Cap
+  {symbol:'ADA/USD',     name:'Cardano',          cat:'Large Cap'},
+  {symbol:'AVAX/USD',    name:'Avalanche',        cat:'Large Cap'},
+  {symbol:'DOGE/USD',    name:'Dogecoin',         cat:'Large Cap'},
+  {symbol:'DOT/USD',     name:'Polkadot',         cat:'Large Cap'},
+  {symbol:'LINK/USD',    name:'Chainlink',        cat:'Large Cap'},
+  {symbol:'MATIC/USD',   name:'Polygon',          cat:'Large Cap'},
+  {symbol:'LTC/USD',     name:'Litecoin',         cat:'Large Cap'},
+  // Layer 1 & 2
+  {symbol:'NEAR/USD',    name:'NEAR Protocol',    cat:'Layer 1'},
+  {symbol:'APT/USD',     name:'Aptos',            cat:'Layer 1'},
+  {symbol:'SUI/USD',     name:'Sui',              cat:'Layer 1'},
+  {symbol:'ARB/USD',     name:'Arbitrum',         cat:'Layer 2'},
+  {symbol:'OP/USD',      name:'Optimism',         cat:'Layer 2'},
+  {symbol:'INJ/USD',     name:'Injective',        cat:'Layer 1'},
+  // DeFi
+  {symbol:'UNI/USD',     name:'Uniswap',          cat:'DeFi'},
+  {symbol:'AAVE/USD',    name:'Aave',             cat:'DeFi'},
+  // AI / Tech — Top by market cap June 2026
+  {symbol:'TAO/USD',     name:'Bittensor',        cat:'AI/Tech'},
+  {symbol:'FET/USD',     name:'Fetch.ai (ASI)',   cat:'AI/Tech'},
+  {symbol:'RNDR/USD',    name:'Render',           cat:'AI/Tech'},
+  {symbol:'GRT/USD',     name:'The Graph',        cat:'AI/Tech'},
+  {symbol:'WLD/USD',     name:'Worldcoin',        cat:'AI/Tech'},
+  {symbol:'OCEAN/USD',   name:'Ocean Protocol',   cat:'AI/Tech'},
+  {symbol:'AKT/USD',     name:'Akash Network',    cat:'AI/Tech'},
+  {symbol:'VIRTUAL/USD', name:'Virtuals Protocol',cat:'AI/Tech'},
+];
+const CRYPTO_CAT_COLORS = {
+  'Mega Cap':'#2563EB','Large Cap':'#7C3AED','Layer 1':'#0891B2','Layer 2':'#D97706','DeFi':'#059669','AI/Tech':'#EC4899'
+};
+
 // ── Active universes (default + custom additions, minus removals) ─────────────
+function getActiveCrypto() {
+  const base = CRYPTO.map(c=>({...c}));
+  const adds  = CUSTOM_CRYPTO.filter(c=>c.action==='add');
+  const removes = new Set(CUSTOM_CRYPTO.filter(c=>c.action==='remove').map(c=>c.symbol));
+  const merged = [...base.filter(c=>!removes.has(c.symbol)),
+    ...adds.map(c=>({symbol:c.symbol, name:c.name||c.symbol.replace('/USD',''), cat:c.cat||'Custom'}))];
+  const seen=new Set();
+  return merged.filter(c=>{ if(seen.has(c.symbol)) return false; seen.add(c.symbol); return true; });
+}
+
 function getActiveSP500() {
   const base = [...SP500];
   const adds = CUSTOM_SP500.filter(c=>c.action==='add').map(c=>c.ticker);
@@ -630,7 +702,7 @@ function umResetETF() {
 // ── Storage ──────────────────────────────────────────────────────────────────
 const SK='me_v3';
 const ls={get:()=>{try{const v=localStorage.getItem(SK);return v?JSON.parse(v):null;}catch{return null;}},
-          set:()=>{try{localStorage.setItem(SK,JSON.stringify({stocks:ST,cfg:CFG,log:LOG,sip:SIP,fk:FK,tdkeys:TDKEYS,screenerCache:SCACHE,wl:WL,sldata:SLDATA,market:MARKET,etfp:ETFP,etfwl:ETF_WL,etfcache:ETF_CACHE,csp500:CUSTOM_SP500,cetf:CUSTOM_ETF}));}catch{}}};
+          set:()=>{try{localStorage.setItem(SK,JSON.stringify({stocks:ST,cfg:CFG,log:LOG,sip:SIP,fk:FK,tdkeys:TDKEYS,screenerCache:SCACHE,wl:WL,sldata:SLDATA,market:MARKET,etfp:ETFP,etfwl:ETF_WL,etfcache:ETF_CACHE,etfall:ETF_ALL,cryptocache:CRYPTO_CACHE,csp500:CUSTOM_SP500,cetf:CUSTOM_ETF,ccrypto:CUSTOM_CRYPTO}));}catch{}}};
 
 // ── Defaults ──────────────────────────────────────────────────────────────────
 const DEF_STOCKS=[
@@ -640,17 +712,17 @@ const DEF_STOCKS=[
   {id:4,ticker:'MRVL',sh:0,cost:0,price:0,trend:'positive',mom:'high',notes:'',dt:'2026-01-01',bk:[]},
   {id:5,ticker:'CRDO',sh:0,cost:0,price:0,trend:'positive',mom:'high',notes:'',dt:'2026-01-01',bk:[]},
 ];
-const DEF_CFG={cash:1000,maxPct:20,minPct:8,cashPct:10,maxPos:7,sipAmt:500,pb1:40,pb1q:40,pb2:80,pb2q:40,slAtrMult:2.0};
+const DEF_CFG={cash:1000,maxPct:20,minPct:8,cashPct:10,maxPos:7,sipAmt:500,pb1:40,pb1q:40,pb2:80,pb2q:40,slAtrMult:2.0,riskPct:1};
 const PAL=['#2563EB','#7C3AED','#059669','#D97706','#DC2626','#0891B2','#65A30D','#BE185D'];
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let ST,CFG,LOG,SIP,FK,TDKEYS=[],WL=[],BULL_PAGE=0,BEAR_PAGE=0,SLDATA={},MARKET={spyST:null,spyBull:null,vix:null,updatedAt:null},ETFP=[],ETF_WL=[],ETF_CACHE=[],ETF_SCANNING=false,ETF_PROG=0,ETF_TOTAL=0,CUSTOM_SP500=[],CUSTOM_ETF=[],PSTAT={},PFETCH=false,PLASTF=null,TAB='dashboard',SCACHE=[],SCANNING=false,SCAN_PROG=0,SCAN_TOTAL=0;
+let ST,CFG,LOG,SIP,FK,TDKEYS=[],WL=[],BULL_PAGE=0,BEAR_PAGE=0,SLDATA={},MARKET={spyST:null,spyBull:null,vix:null,spyClose:null,spy1W:null,spy4W:null,spy13W:null,spy26W:null,spyHistory:[],updatedAt:null},ETFP=[],ETF_WL=[],ETF_CACHE=[],ETF_ALL=[],ETF_SCANNING=false,ETF_PROG=0,ETF_TOTAL=0,CRYPTO_CACHE=[],CRYPTO_SCANNING=false,CRYPTO_PROG=0,CRYPTO_TOTAL=0,CRYPTO_ABORT=false,CUSTOM_SP500=[],CUSTOM_ETF=[],CUSTOM_CRYPTO=[],PSTAT={},PFETCH=false,PLASTF=null,TAB='dashboard',SCACHE=[],SCANNING=false,SCAN_PROG=0,SCAN_TOTAL=0;
 
 function init(){
   const d=ls.get();
   ST=d?.stocks||DEF_STOCKS.map(s=>({...s,bk:[]}));
   CFG=d?.cfg?{...DEF_CFG,...d.cfg}:{...DEF_CFG};
-  LOG=d?.log||[]; SIP=d?.sip||[]; FK=d?.fk||''; TDKEYS=Array.isArray(d?.tdkeys)?d.tdkeys:(d?.tdk?[d.tdk]:[]); WL=d?.wl||[]; SLDATA=d?.sldata||{}; MARKET=d?.market||{spyST:null,spyBull:null,vix:null,updatedAt:null}; ETFP=d?.etfp||[]; ETF_WL=d?.etfwl||[]; ETF_CACHE=d?.etfcache||[]; CUSTOM_SP500=d?.csp500||[]; CUSTOM_ETF=d?.cetf||[];
+  LOG=d?.log||[]; SIP=d?.sip||[]; FK=d?.fk||''; TDKEYS=Array.isArray(d?.tdkeys)?d.tdkeys:(d?.tdk?[d.tdk]:[]); WL=d?.wl||[]; SLDATA=d?.sldata||{}; MARKET=d?.market||{spyST:null,spyBull:null,vix:null,spyClose:null,spy1W:null,spy4W:null,spy13W:null,spy26W:null,spyHistory:[],updatedAt:null}; ETFP=d?.etfp||[]; ETF_WL=d?.etfwl||[]; ETF_CACHE=d?.etfcache||[]; ETF_ALL=d?.etfall||[]; CRYPTO_CACHE=d?.cryptocache||[]; CUSTOM_SP500=d?.csp500||[]; CUSTOM_ETF=d?.cetf||[]; CUSTOM_CRYPTO=d?.ccrypto||[];
   SCACHE=d?.screenerCache||[];
 }
 
@@ -778,7 +850,7 @@ const TD_WAIT_MS  = 63000; // ms between calls per key (just over 1 minute to re
 
 // Worker: continuously pulls batches from queue using its assigned API key
 async function keyWorker(apiKey, queue, keyIdx) {
-  while (queue.length > 0 && !scanAbort) {
+  while (queue.length > 0 && !CRYPTO_ABORT) {
     const batch = queue.splice(0, TD_BATCH);
     try {
       const results = await fetchBatchTD(batch, apiKey);
@@ -1162,6 +1234,14 @@ async function fetchMarketStatus() {
       const closes = weeks.map(w=>w.c), highs=weeks.map(w=>w.h), lows=weeks.map(w=>w.l);
       const st = calcSupertrend(closes, highs, lows, 10, 3);
       if (st) { MARKET.spyST=st.lastST; MARKET.spyBull=st.bullish; MARKET.spyClose=st.lastClose; }
+      // Store full SPY weekly history for per-stock entry date comparison
+      MARKET.spyHistory = spyData.values.map(v=>({date:v.datetime, close:parseFloat(v.close)}));
+      // Capture SPY period returns for benchmark comparison
+      const n=closes.length;
+      MARKET.spy1W  = n>=2  ? ((closes[n-1]-closes[n-2])/closes[n-2])*100  : null;
+      MARKET.spy4W  = n>=5  ? ((closes[n-1]-closes[n-5])/closes[n-5])*100  : null;
+      MARKET.spy13W = n>=14 ? ((closes[n-1]-closes[n-14])/closes[n-14])*100 : null;
+      MARKET.spy26W = n>=27 ? ((closes[n-1]-closes[n-27])/closes[n-27])*100 : null;
     }
     // Step 2: Rate limit wait (countdown)
     MARKET_STEP = 2; r();
@@ -1274,17 +1354,38 @@ async function runETFScreener() {
   const workers = TDKEYS.map(k => etfWorker(k));
   await Promise.all(workers);
 
-  // Build result: for each sector keep only highest-score bullish ETF
+  // Build result: best bullish ETF per sector + all bearish
   const allResults = Object.values(resultMap);
   const sectorBest = {};
-  // First pass — bullish only, pick highest score per sector
+  const sectorBear = {};
+
+  // Bullish: pick highest score per sector
   allResults.filter(e=>e.bullish).sort((a,b)=>(b.score||0)-(a.score||0)).forEach(e=>{
     if (!sectorBest[e.sector]) sectorBest[e.sector] = e;
   });
-  ETF_CACHE = Object.values(sectorBest).sort((a,b)=>(b.score||0)-(a.score||0));
+  // Bearish: pick worst (most bearish) per sector for awareness
+  allResults.filter(e=>!e.bullish).sort((a,b)=>(a.score||0)-(b.score||0)).forEach(e=>{
+    if (!sectorBear[e.sector]) sectorBear[e.sector] = e;
+  });
+
+  // ETF_CACHE: bullish first sorted by score, then bearish sectors
+  const bullList = Object.values(sectorBest).sort((a,b)=>(b.score||0)-(a.score||0));
+  const bearList = Object.values(sectorBear)
+    .filter(e=>!sectorBest[e.sector]) // only show bearish if no bullish in that sector
+    .sort((a,b)=>(b.roc4||0)-(a.roc4||0));
+
+  ETF_CACHE = [...bullList, ...bearList];
+
+  // Also store ALL raw results for reference
+  ETF_ALL = allResults.sort((a,b)=>{
+    if(a.bullish&&!b.bullish) return -1;
+    if(!a.bullish&&b.bullish) return 1;
+    return (b.score||0)-(a.score||0);
+  });
 
   ETF_SCANNING = false; ls.set();
-  showToast('ETF scan done — ' + ETF_CACHE.length + ' bullish sectors found ✓');
+  const bull=bullList.length, bear=bearList.length;
+  showToast('ETF scan — '+bull+' bullish sectors · '+bear+' bearish sectors · '+allResults.length+' ETFs scanned ✓');
   r();
 }
 
@@ -1352,6 +1453,52 @@ function etfSaveEdit() {
 
 
 // ── Universe Manager action wrappers (avoids escaped-quote issues in HTML) ────
+function umDoAddCrypto() {
+  const sym = (document.getElementById('um-crypto-add').value||'').trim().toUpperCase();
+  const name= (document.getElementById('um-crypto-name').value||'').trim();
+  const cat = (document.getElementById('um-crypto-cat').value||'Custom');
+  if (!sym) return;
+  const symbol = sym.includes('/') ? sym : sym+'/USD';
+  if (getActiveCrypto().find(c=>c.symbol===symbol)) { showToast(symbol+' already in crypto universe','info'); return; }
+  CUSTOM_CRYPTO = CUSTOM_CRYPTO.filter(c=>!(c.symbol===symbol&&c.action==='remove'));
+  CUSTOM_CRYPTO.push({symbol, name:name||sym, cat, action:'add', date:tod()});
+  ls.set(); showToast(symbol+' added to crypto universe ✓');
+  document.getElementById('um-crypto-add').value='';
+  document.getElementById('um-crypto-name').value='';
+  r();
+}
+function umDoRemCrypto() {
+  const sym = (document.getElementById('um-crypto-rem').value||'').trim().toUpperCase();
+  if (!sym) return;
+  const symbol = sym.includes('/') ? sym : sym+'/USD';
+  CUSTOM_CRYPTO = CUSTOM_CRYPTO.filter(c=>!(c.symbol===symbol&&c.action==='add'));
+  if (CRYPTO.find(c=>c.symbol===symbol)) CUSTOM_CRYPTO.push({symbol, action:'remove', date:tod()});
+  else CUSTOM_CRYPTO = CUSTOM_CRYPTO.filter(c=>c.symbol!==symbol);
+  ls.set(); showToast(symbol+' removed');
+  document.getElementById('um-crypto-rem').value=''; r();
+}
+function umDoBatchCrypto() {
+  const raw = (document.getElementById('um-crypto-batch').value||'').trim();
+  if (!raw) return;
+  const syms = raw.split(/[\n,;\s]+/).map(s=>s.trim().toUpperCase()).filter(s=>s.length>=2&&s.length<=12);
+  let added=0;
+  syms.forEach(s=>{
+    const symbol = s.includes('/')?s:s+'/USD';
+    if (!getActiveCrypto().find(c=>c.symbol===symbol)) {
+      CUSTOM_CRYPTO.push({symbol, name:s.replace('/USD',''), cat:'Custom', action:'add', date:tod()});
+      added++;
+    }
+  });
+  ls.set();
+  document.getElementById('um-crypto-batch').value='';
+  showToast(added+' coin'+(added!==1?'s':'')+' added to crypto universe ✓'); r();
+}
+function umResetCrypto() {
+  if (!confirm('Reset crypto universe to default 15 coins?')) return;
+  CUSTOM_CRYPTO=[]; ls.set(); showToast('Crypto universe reset'); r();
+}
+function umUndoCrypto(sym) { CUSTOM_CRYPTO=CUSTOM_CRYPTO.filter(x=>x.symbol!==sym); ls.set(); r(); }
+
 function umDoAddSP500()  { const v=(document.getElementById('um-sp500-add').value||'').trim(); if(v){umAddSP500(v); document.getElementById('um-sp500-add').value='';} }
 function umDoRemSP500()  { const v=(document.getElementById('um-sp500-rem').value||'').trim(); if(v){umRemoveSP500(v); document.getElementById('um-sp500-rem').value='';} }
 function umDoBatchSP500(){ const v=(document.getElementById('um-sp500-batch').value||'').trim(); if(v){umBatchAdd(v,'sp500'); document.getElementById('um-sp500-batch').value='';} }
@@ -1373,6 +1520,171 @@ function doEtfAdd(t,p)                    { etfAddToPortfolio(t,p); }
 function doEtfEdit(id)                    { etfOpenEdit(parseInt(id)); }
 function doEtfRemove(id)                  { etfRemove(parseInt(id)); }
 
+
+
+
+// ── Get SPY return since a specific date (for per-stock alpha) ───────────────
+function getSpyReturnSince(entryDate) {
+  if (!MARKET.spyHistory || !MARKET.spyHistory.length) return null;
+  // Find the closest SPY weekly bar on or after entry date
+  const hist = MARKET.spyHistory; // oldest first (order=ASC)
+  const latest = hist[hist.length-1].close;
+  // Find bar closest to entry date
+  let closest = null, minDiff = Infinity;
+  for (const bar of hist) {
+    const diff = Math.abs(new Date(bar.date) - new Date(entryDate));
+    if (diff < minDiff) { minDiff = diff; closest = bar; }
+  }
+  if (!closest) return null;
+  return ((latest - closest.close) / closest.close) * 100;
+}
+
+
+// ── Position Sizer ───────────────────────────────────────────────────────────
+function calcPositionSize() {
+  const entry  = parseFloat(document.getElementById('ps-entry')?.value) || 0;
+  const sl     = parseFloat(document.getElementById('ps-sl')?.value) || 0;
+  const riskPct= parseFloat(document.getElementById('ps-risk')?.value) || 1;
+  const capital= parseFloat(document.getElementById('ps-cap')?.value) || cap();
+  const ticker = (document.getElementById('ps-ticker')?.value || '').trim().toUpperCase();
+  const el     = document.getElementById('ps-result');
+  if (!el) return;
+
+  if (!entry || !sl || entry <= sl) {
+    el.innerHTML = '<span style="color:#94A3B8;font-size:13px">' +
+      (!entry || !sl ? 'Enter entry price and stop loss to calculate.' :
+       'Stop loss must be below entry price.') + '</span>';
+    return;
+  }
+
+  const riskAmt    = (riskPct / 100) * capital;
+  const slDist     = entry - sl;
+  const slDistPct  = (slDist / entry) * 100;
+  const shares     = Math.floor(riskAmt / slDist);
+  const posValue   = shares * entry;
+  const posPercCap = (posValue / capital) * 100;
+  const maxLoss    = shares * slDist;
+
+  // Check vs max position size
+  const overMax = posPercCap > CFG.maxPct;
+  // Adjust shares if over max
+  const maxShares  = Math.floor((CFG.maxPct / 100 * capital) / entry);
+  const safeShares = Math.min(shares, maxShares);
+  const safePosVal = safeShares * entry;
+  const safeMaxLoss= safeShares * slDist;
+
+  const c1 = '#059669', c2 = overMax ? '#DC2626' : '#059669';
+
+  el.innerHTML =
+    '<div class="row g-3">' +
+    // Main result
+    '<div class="col-12"><div class="row g-2">' +
+    [
+      {l:'Shares to Buy',    v: safeShares+' shares',             c:'#2563EB', big:true},
+      {l:'Position Value',   v: f$(safePosVal),                   c:c2},
+      {l:'% of Capital',     v: fN(posPercCap,1)+'%',             c:overMax?'#DC2626':'#059669'},
+      {l:'Max Loss (1%)',     v: f$(safeMaxLoss),                  c:'#DC2626'},
+      {l:'SL Distance',      v: f$(slDist)+' ('+fN(slDistPct,1)+'%)', c:'#475569'},
+      {l:'Risk per Share',   v: f$(slDist),                       c:'#475569'},
+    ].map(function(m){
+      return '<div class="col-6 col-md-2"><div class="metric-card text-center" style="background:#fff">' +
+        '<div class="metric-label">'+m.l+'</div>' +
+        '<div style="font-size:'+(m.big?'20':'15')+'px;font-weight:900;color:'+m.c+'">'+m.v+'</div>' +
+        '</div></div>';
+    }).join('') +
+    '</div></div>' +
+
+    // Profit targets
+    '<div class="col-12"><div style="font-size:10px;font-weight:700;color:#94A3B8;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">Profit Booking Targets</div>' +
+    '<div class="row g-2">' +
+    [
+      {l:'Book 40% at +'+CFG.pb1+'%', shares: Math.floor(safeShares*0.4), price: entry*(1+CFG.pb1/100), gain: safeShares*0.4*entry*(CFG.pb1/100)},
+      {l:'Book 40% at +'+CFG.pb2+'%', shares: Math.floor(safeShares*0.4), price: entry*(1+CFG.pb2/100), gain: safeShares*0.4*entry*(CFG.pb2/100)},
+      {l:'Ride 20% (last)',           shares: Math.ceil(safeShares*0.2),  price: null, gain: null},
+    ].map(function(t){
+      return '<div class="col-md-4"><div class="p-2 rounded" style="background:#EFF6FF;border:1px solid #BFDBFE">' +
+        '<div style="font-size:10px;font-weight:700;color:#2563EB;margin-bottom:3px">'+t.l+'</div>' +
+        '<div style="font-size:12px;color:#475569">Sell '+t.shares+' shares' +
+        (t.price?' @ '+f$(t.price)+' → +'+f$(t.gain):'') + '</div>' +
+        '</div></div>';
+    }).join('') +
+    '</div></div>' +
+
+    // Warning if over max
+    (overMax ? '<div class="col-12"><div class="alert alert-warning py-2 mb-0" style="border-radius:8px;font-size:12px">' +
+      '⚠ Based on 1% risk, position would be '+fN(posPercCap,1)+'% of capital (above your '+CFG.maxPct+'% max). ' +
+      'Capped to '+maxShares+' shares ('+fN(safePosVal/capital*100,1)+'% of capital). ' +
+      'Consider widening the stop or skipping this trade.' +
+      '</div></div>' : '') +
+
+    '</div>';
+}
+
+
+// ── Crypto Screener ──────────────────────────────────────────────────────────
+async function runCryptoScreener() {
+  if (CRYPTO_SCANNING) return;
+  if (!TDKEYS.length) { showTDKeyModal(); return; }
+  CRYPTO_SCANNING = true; CRYPTO_ABORT = false; CRYPTO_PROG = 0; CRYPTO_TOTAL = getActiveCrypto().length;
+  showToast('Scanning ' + getActiveCrypto().length + ' crypto pairs…', 'info'); r();
+
+  const queue = [...getActiveCrypto()];
+  const results = [];
+
+  async function cryptoWorker(apiKey) {
+    while (queue.length > 0 && !CRYPTO_ABORT) {
+      const coin = queue.shift();
+      try {
+        const url = 'https://api.twelvedata.com/time_series?symbol='
+          + encodeURIComponent(coin.symbol)
+          + '&interval=1week&outputsize=30&order=ASC&apikey='
+          + encodeURIComponent(apiKey);
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.values && data.values.length >= 12) {
+            const weeks = data.values.map(v=>({
+              o:parseFloat(v.open), h:parseFloat(v.high),
+              l:parseFloat(v.low),  c:parseFloat(v.close)
+            }));
+            const closes=weeks.map(w=>w.c), highs=weeks.map(w=>w.h), lows=weeks.map(w=>w.l);
+            const st = calcSupertrend(closes, highs, lows, 10, 3);
+            if (st) {
+              results.push({
+                symbol:coin.symbol, name:coin.name, cat:coin.cat,
+                bullish:st.bullish, score:st.score||0,
+                distPct:st.distPct, roc4:st.roc4, roc13:st.roc13,
+                lastClose:st.lastClose, lastST:st.lastST, scanned:tod()
+              });
+            }
+          }
+        }
+      } catch(e) { console.warn('Crypto fetch error:', coin.symbol, e); }
+      CRYPTO_PROG++; r();
+      if (queue.length > 0) await new Promise(res => setTimeout(res, 8000));
+    }
+  }
+
+  const workers = TDKEYS.map(k => cryptoWorker(k));
+  await Promise.all(workers);
+
+  // Sort: bullish first by score, then bearish
+  results.sort((a,b) => {
+    if (a.bullish && !b.bullish) return -1;
+    if (!a.bullish && b.bullish) return 1;
+    return (b.score||0) - (a.score||0);
+  });
+  CRYPTO_CACHE = results;
+  CRYPTO_SCANNING = false; ls.set();
+  const bull = results.filter(x=>x.bullish).length;
+  showToast('Crypto scan done — ' + bull + ' bullish / ' + (results.length-bull) + ' bearish ✓');
+  r();
+}
+
+
+// ── Key router — use dedicated keys if set, else fall back to shared pool ────
+
+// ── Key assignment ────────────────────────────────────────────────────────────function clearKeyAssign(task) {
 function wlNoteChange(el) {
   const ticker = el.getAttribute('data-ticker');
   WL = WL.map(x => x.ticker === ticker ? {...x, note:el.value} : x);
@@ -1666,6 +1978,93 @@ function r(){
     }
     html+='</div></div>';
 
+
+    // ── Portfolio vs S&P 500 — from each stock's entry date ────────────────────
+    const hasSpyHistory = MARKET.spyHistory && MARKET.spyHistory.length > 0;
+    if(hasSpyHistory && ss.length > 0){
+      // Calculate per-stock alpha using actual entry date
+      const stockData = ss.map(function(s){
+        const spyRet = getSpyReturnSince(s.dt);
+        const stockRet = s.plp || 0;
+        const alpha = spyRet !== null ? stockRet - spyRet : null;
+        return {...s, spyRet, stockRet, alpha};
+      });
+
+      const validData  = stockData.filter(x=>x.alpha!==null);
+      const beating    = validData.filter(x=>x.alpha>=0).length;
+      const lagging    = validData.filter(x=>x.alpha<0).length;
+      const avgAlpha   = validData.length ? validData.reduce((a,x)=>a+x.alpha,0)/validData.length : 0;
+      const totalStockRet = validData.length ? validData.reduce((a,x)=>a+x.stockRet,0)/validData.length : 0;
+      const totalSpyRet   = validData.length ? validData.reduce((a,x)=>a+(x.spyRet||0),0)/validData.length : 0;
+      const alphaColor = avgAlpha>=0?'#059669':'#DC2626';
+      const alphaBg    = avgAlpha>=0?'#ECFDF5':'#FEF2F2';
+
+      html+='<div class="card mb-3"><div class="card-header d-flex justify-content-between align-items-center">';
+      html+='<span><i class="bi bi-bar-chart-steps me-2"></i>Portfolio vs S&P 500 (from each entry date)</span>';
+      html+='<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:'+alphaBg+';color:'+alphaColor+'">'+(avgAlpha>=0?'+':'')+avgAlpha.toFixed(1)+'% avg alpha</span>';
+      html+='</div><div class="card-body">';
+
+      // ── 3 summary stats ──
+      html+='<div class="row g-2 mb-3">';
+      [{l:'Avg stock return', v:(totalStockRet>=0?'+':'')+totalStockRet.toFixed(1)+'%', c:totalStockRet>=0?'#059669':'#DC2626'},
+       {l:'SPY (same periods)', v:(totalSpyRet>=0?'+':'')+totalSpyRet.toFixed(1)+'%', c:'#475569'},
+       {l:'Avg alpha', v:(avgAlpha>=0?'+':'')+avgAlpha.toFixed(1)+'%', c:alphaColor}
+      ].forEach(function(m){
+        html+='<div class="col-4"><div class="metric-card text-center"><div class="metric-label">'+m.l+'</div><div style="font-size:18px;font-weight:900;color:'+m.c+'">'+m.v+'</div></div></div>';
+      });
+      html+='</div>';
+
+      // ── Per-stock rows ──
+      html+='<div style="font-size:10px;font-weight:700;color:#94A3B8;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Each stock vs SPY since your entry date</div>';
+      stockData.forEach(function(s){
+        if(s.alpha===null) return;
+        const maxR  = Math.max(Math.abs(s.stockRet), Math.abs(s.spyRet||0), 2);
+        const stockW= Math.round(Math.min(98,Math.max(2,(s.stockRet/maxR)*50+50)));
+        const spyW  = Math.round(Math.min(98,Math.max(2,((s.spyRet||0)/maxR)*50+50)));
+        const ac    = s.alpha>=0?'#059669':'#DC2626';
+        const abg   = s.alpha>=0?'#ECFDF5':'#FEF2F2';
+
+        html+='<div class="d-flex align-items-center gap-2 mb-3">';
+        // Ticker label
+        html+='<div style="min-width:52px">';
+        html+='<div style="font-size:13px;font-weight:800">'+s.ticker+'</div>';
+        html+='<div style="font-size:9px;color:#94A3B8">since '+s.dt+'</div>';
+        html+='</div>';
+        // Bars
+        html+='<div style="flex:1">';
+        // SPY bar
+        html+='<div class="d-flex align-items-center gap-1 mb-1">';
+        html+='<span style="min-width:32px;color:#94A3B8;font-size:10px">SPY</span>';
+        html+='<div style="flex:1;height:7px;background:#E3E8F0;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+spyW+'%;background:#94A3B8;border-radius:4px"></div></div>';
+        html+='<span style="min-width:42px;text-align:right;font-size:11px;color:#475569">'+(s.spyRet>=0?'+':'')+s.spyRet.toFixed(1)+'%</span>';
+        html+='</div>';
+        // Stock bar
+        html+='<div class="d-flex align-items-center gap-1">';
+        html+='<span style="min-width:32px;font-weight:700;font-size:10px;color:'+ac+'">'+s.ticker+'</span>';
+        html+='<div style="flex:1;height:7px;background:#E3E8F0;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+stockW+'%;background:'+ac+';border-radius:4px"></div></div>';
+        html+='<span style="min-width:42px;text-align:right;font-size:11px;font-weight:700;color:'+ac+'">'+(s.stockRet>=0?'+':'')+s.stockRet.toFixed(1)+'%</span>';
+        html+='</div>';
+        html+='</div>';
+        // Alpha badge
+        html+='<div style="min-width:60px;text-align:center;background:'+abg+';border-radius:8px;padding:4px 6px">';
+        html+='<div style="font-size:9px;color:'+ac+';font-weight:700">ALPHA</div>';
+        html+='<div style="font-size:13px;font-weight:900;color:'+ac+'">'+(s.alpha>=0?'+':'')+s.alpha.toFixed(1)+'%</div>';
+        html+='</div>';
+        html+='</div>';
+      });
+
+      // ── Footer summary ──
+      html+='<div style="border-top:1px solid #E3E8F0;padding-top:10px;display:flex;gap:16px;font-size:12px">';
+      html+='<span style="color:#059669;font-weight:700">🏆 '+beating+' beating SPY</span>';
+      html+='<span style="color:#DC2626;font-weight:700">⚠ '+lagging+' lagging SPY</span>';
+      if(avgAlpha>=5) html+='<span style="color:#059669">Portfolio outperforming — strong alpha generation</span>';
+      else if(avgAlpha>=0) html+='<span style="color:#D97706">Portfolio tracking SPY closely</span>';
+      else html+='<span style="color:#DC2626">Portfolio underperforming — review lagging positions</span>';
+      html+='</div>';
+
+      html+='</div></div>';
+    }
+
     if(alerts.length){
       html+='<div class="mb-3">';
       alerts.forEach(a=>{html+='<div class="alert alert-'+a.t+' py-2 px-3 d-flex align-items-center gap-2 mb-2" style="font-size:13px;border-radius:10px"><span>'+a.i+'</span><span>'+a.m+'</span>'+a.a+'</div>';});
@@ -1756,6 +2155,79 @@ function r(){
       html+='</div>';
       if(s.notes)html+='<div class="mt-2 text-muted" style="font-size:12px;background:#F8F9FC;border-radius:7px;padding:6px 10px">📝 '+esc(s.notes)+'</div>';
 
+      // ── Alpha vs S&P 500 ──
+      const hasMarket = MARKET.spy4W !== null;
+      html+='<div class="mt-3 p-3 rounded" style="background:#F8F9FC;border:1px solid #E3E8F0">';
+      html+='<div class="d-flex justify-content-between align-items-center mb-2">';
+      html+='<span style="font-size:10px;font-weight:700;letter-spacing:.1em;color:#94A3B8;text-transform:uppercase"><i class="bi bi-bar-chart-steps me-1"></i>Alpha vs S&P 500 (SPY)</span>';
+      if(!hasMarket) html+='<button class="btn btn-sm py-0" style="font-size:11px;background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE" onclick="fetchMarketStatus()"><i class="bi bi-arrow-clockwise me-1"></i>Fetch SPY Data</button>';
+      html+='</div>';
+      if(!hasMarket){
+        html+='<div style="font-size:12px;color:#94A3B8">Update market data (Dashboard → Market Filter → Update) to see alpha.</div>';
+      } else {
+        const stockRet = s.plp || 0;
+        const spy4W    = MARKET.spy4W  || 0;
+        const spy13W   = MARKET.spy13W || 0;
+        const spy26W   = MARKET.spy26W || 0;
+        const a4W      = stockRet - spy4W;
+        const a13W     = stockRet - spy13W;
+        const a26W     = stockRet - spy26W;
+        const aEntry   = stockRet - spy26W; // best proxy for since-entry benchmark
+        const overallAlpha = aEntry;
+        const winning  = overallAlpha >= 0;
+
+        // ── Comparison bar ──
+        const maxRet   = Math.max(Math.abs(stockRet), Math.abs(spy26W), 5);
+        const stockPct = Math.round(Math.min(100, Math.max(0, (stockRet/maxRet)*50+50)));
+        const spyPct   = Math.round(Math.min(100, Math.max(0, (spy26W/maxRet)*50+50)));
+        html+='<div style="background:#fff;border:1px solid #E3E8F0;border-radius:10px;padding:10px 14px;margin-bottom:10px">';
+        html+='<div class="d-flex justify-content-between mb-1" style="font-size:11px;color:#94A3B8">';
+        html+='<span>vs S&P 500</span>';
+        html+='<span style="font-weight:700;color:'+(winning?'#059669':'#DC2626')+'">'+(overallAlpha>=0?'+':'')+overallAlpha.toFixed(1)+'% alpha</span>';
+        html+='</div>';
+        // SPY bar
+        html+='<div class="mb-1" style="font-size:11px;color:#94A3B8;display:flex;align-items:center;gap:8px">';
+        html+='<span style="min-width:60px">SPY</span>';
+        html+='<div style="flex:1;height:7px;background:#E3E8F0;border-radius:4px;overflow:hidden">';
+        html+='<div style="height:100%;width:'+spyPct+'%;background:#94A3B8;border-radius:4px"></div></div>';
+        html+='<span style="min-width:44px;text-align:right">'+spy26W.toFixed(1)+'%</span>';
+        html+='</div>';
+        // Stock bar
+        html+='<div style="font-size:11px;display:flex;align-items:center;gap:8px">';
+        html+='<span style="min-width:60px;font-weight:600">'+s.ticker+'</span>';
+        html+='<div style="flex:1;height:7px;background:#E3E8F0;border-radius:4px;overflow:hidden">';
+        html+='<div style="height:100%;width:'+stockPct+'%;background:'+(winning?'#059669':'#DC2626')+';border-radius:4px"></div></div>';
+        html+='<span style="min-width:44px;text-align:right;font-weight:600;color:'+(winning?'#059669':'#DC2626')+'">'+stockRet.toFixed(1)+'%</span>';
+        html+='</div>';
+        html+='</div>';
+
+        // ── Alpha chips ──
+        function alphaChip(label, alpha) {
+          const pos = alpha >= 0;
+          const bg  = pos ? '#ECFDF5' : '#FEF2F2';
+          const clr = pos ? '#059669' : '#DC2626';
+          return '<div style="text-align:center;padding:8px 4px;background:'+bg+';border-radius:8px">'+
+            '<div style="font-size:9px;color:'+clr+';font-weight:700;margin-bottom:3px">'+label+'</div>'+
+            '<div style="font-size:13px;font-weight:800;color:'+clr+'">'+(alpha>=0?'+':'')+alpha.toFixed(1)+'%</div>'+
+            '</div>';
+        }
+        html+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">';
+        html+=alphaChip('4W alpha', a4W);
+        html+=alphaChip('13W alpha', a13W);
+        html+=alphaChip('26W alpha', a26W);
+        html+=alphaChip('Since entry', aEntry);
+        html+='</div>';
+
+        // ── Verdict ──
+        const verdictBg  = overallAlpha >=  5 ? '#ECFDF5' : overallAlpha >= 0 ? '#FFFBEB' : '#FEF2F2';
+        const verdictClr = overallAlpha >=  5 ? '#059669' : overallAlpha >= 0 ? '#D97706' : '#DC2626';
+        const verdictTxt = overallAlpha >=  5 ? '🏆 Beating S&P 500 — strong alpha'
+                         : overallAlpha >=  0 ? '≈ In line with S&P 500'
+                         : '⚠ Lagging S&P 500 — review position';
+        html+='<div style="font-size:12px;font-weight:600;padding:6px 10px;border-radius:8px;background:'+verdictBg+';color:'+verdictClr+'">'+verdictTxt+'</div>';
+      }
+      html+='</div>';
+
       html+='</div>';
     });
   }
@@ -1812,6 +2284,252 @@ function r(){
     }
     if(!SIP.length)html+='<p class="text-center text-muted py-4">No SIP entries yet.</p>';
     [...SIP].reverse().forEach(e=>{html+='<div class="sip-entry"><div><div style="font-size:15px;font-weight:800;color:var(--me-purple)">'+f$(e.amount)+'</div><div style="font-size:11px;color:var(--me-muted)">'+e.date+(e.note?' · '+esc(e.note):'')+'</div></div><button class="btn btn-sm btn-outline-danger py-0" onclick="delSip('+e.id+')"><i class="bi bi-x-lg"></i></button></div>';});
+  }
+
+
+  // ── TRADE PLANNER ──────────────────────────────────────────────────────────
+  if(TAB==='planner'){
+    html+='<h5 class="fw-bold mb-1"><i class="bi bi-calculator me-2" style="color:var(--me-blue)"></i>Trade Planner</h5>';
+    html+='<p class="text-muted mb-4" style="font-size:13px">Position Sizer + Entry Checklist — answer all 4 trading questions before every trade</p>';
+
+    // ── POSITION SIZER ──────────────────────────────────────────────────────
+    html+='<div class="card mb-3"><div class="card-header"><i class="bi bi-calculator me-2"></i>Position Sizer — How Much to Buy</div><div class="card-body">';
+    html+='<p style="font-size:12px;color:#475569;margin-bottom:16px">Based on your 1% risk rule: <strong>you risk max '+f$((CFG.riskPct||1)/100*cap())+' per trade</strong> ('+(CFG.riskPct||1)+'% of '+f$(cap())+' capital)</p>';
+
+    html+='<div class="row g-3 mb-3">';
+    html+='<div class="col-md-4"><div class="inp-label">Ticker</div><input type="text" id="ps-ticker" class="form-control" placeholder="e.g. NVDA" style="text-transform:uppercase" oninput="calcPositionSize()"/></div>';
+    html+='<div class="col-md-4"><div class="inp-label">Entry Price ($)</div><input type="number" id="ps-entry" class="form-control" placeholder="e.g. 875.00" oninput="calcPositionSize()"/></div>';
+    html+='<div class="col-md-4"><div class="inp-label">Stop Loss Price ($)</div><input type="number" id="ps-sl" class="form-control" placeholder="e.g. 780.00" oninput="calcPositionSize()"/></div>';
+    html+='<div class="col-md-4"><div class="inp-label">Risk % per trade</div><input type="number" id="ps-risk" class="form-control" value="'+(CFG.riskPct||1)+'" step="0.1" oninput="calcPositionSize()"/></div>';
+    html+='<div class="col-md-4"><div class="inp-label">Total Capital ($)</div><input type="number" id="ps-cap" class="form-control" value="'+cap().toFixed(2)+'" oninput="calcPositionSize()"/></div>';
+    html+='<div class="col-md-4 d-flex align-items-end"><button class="btn btn-primary w-100" onclick="calcPositionSize()"><i class="bi bi-calculator me-1"></i>Calculate</button></div>';
+    html+='</div>';
+
+    // Results box
+    html+='<div id="ps-result" class="p-3 rounded" style="background:#F8F9FC;border:1px solid #E3E8F0;min-height:80px">';
+    html+='<span style="color:#94A3B8;font-size:13px">Fill in the fields above to calculate position size</span>';
+    html+='</div>';
+    html+='</div></div>';
+
+    // ── ENTRY CHECKLIST ─────────────────────────────────────────────────────
+    const spyOk   = MARKET.spyBull === true;
+    const vix     = MARKET.vix;
+    const vixOk   = vix !== null && vix < 25;
+    const vixSt   = getVIXStatus(vix);
+    const hasKeys = TDKEYS.length > 0;
+
+    html+='<div class="card mb-3"><div class="card-header"><i class="bi bi-check2-circle me-2"></i>Entry Checklist — Before Every Trade</div><div class="card-body p-0">';
+
+    const checks = [
+      // Market conditions
+      {
+        group: 'Market Conditions',
+        items: [
+          {
+            q: 'Is SPY Supertrend positive (weekly)?',
+            ok: MARKET.spyBull === true,
+            na: MARKET.spyBull === null,
+            pass: '✓ SPY is bullish — market uptrend confirmed',
+            fail: '✗ SPY Supertrend is NEGATIVE — no new entries. Wait for market recovery',
+            na_txt: 'Update market data (Dashboard → Market Filter → Update)',
+            action: MARKET.spyBull === null ? '<button class="btn btn-sm btn-outline-primary ms-2 py-0" onclick="fetchMarketStatus()">Fetch Now</button>' : ''
+          },
+          {
+            q: 'Is VIX below 25 (normal volatility)?',
+            ok: vixOk,
+            na: vix === null,
+            pass: '✓ VIX at '+( vix?fN(vix,1):'—')+' — '+ vixSt.label+'. Normal entry conditions',
+            fail: '✗ VIX at '+fN(vix,1)+' ('+vixSt.label+') — '+vixSt.desc,
+            na_txt: 'Fetch market data to check VIX',
+            action: ''
+          },
+          {
+            q: 'Is your portfolio below max positions ('+CFG.maxPos+')?',
+            ok: ss.length < CFG.maxPos,
+            na: false,
+            pass: '✓ '+ss.length+'/'+CFG.maxPos+' positions — room for new entry',
+            fail: '✗ Already at max '+CFG.maxPos+' positions. Exit or trim one before adding new',
+            na_txt: '',
+            action: ''
+          },
+        ]
+      },
+      // Stock conditions
+      {
+        group: 'Stock Conditions',
+        items: [
+          {
+            q: 'Is the stock Supertrend (10,3) positive on weekly?',
+            ok: null,
+            na: true,
+            pass: '',
+            fail: '',
+            na_txt: 'Check Screener tab — only buy stocks in Bullish section',
+            action: '<button class="btn btn-sm btn-outline-primary ms-2 py-0" onclick="setTab(\'screener\')">Open Screener</button>'
+          },
+          {
+            q: 'Is the stock in top 30 momentum ranking?',
+            ok: null,
+            na: true,
+            pass: '',
+            fail: '',
+            na_txt: 'Higher rank = stronger momentum. Prefer rank #1–#30 for best entries',
+            action: ''
+          },
+          {
+            q: 'Is the sector also in bullish ETF scan?',
+            ok: null,
+            na: true,
+            pass: '',
+            fail: '',
+            na_txt: 'Check ETF Portfolio tab — if sector ETF is bearish, stock faces headwind',
+            action: '<button class="btn btn-sm btn-outline-primary ms-2 py-0" onclick="setTab(\'etf\')">Check ETFs</button>'
+          },
+        ]
+      },
+      // Risk management
+      {
+        group: 'Risk Management',
+        items: [
+          {
+            q: 'Have you calculated your stop loss level?',
+            ok: null,
+            na: true,
+            pass: '',
+            fail: '',
+            na_txt: 'Use Position Sizer above — SL = MAX(Supertrend line, 2× ATR14 weekly)',
+            action: ''
+          },
+          {
+            q: 'Does position size respect 1% risk rule?',
+            ok: null,
+            na: true,
+            pass: '',
+            fail: '',
+            na_txt: 'Use Position Sizer above — max loss = 1% of capital regardless of SL distance',
+            action: ''
+          },
+          {
+            q: 'Is cash buffer above '+CFG.cashPct+'% after this trade?',
+            ok: (CFG.cash/cap()*100) > CFG.cashPct,
+            na: false,
+            pass: '✓ Cash at '+fN(CFG.cash/cap()*100,1)+'% — buffer maintained after entry',
+            fail: '✗ Cash at '+fN(CFG.cash/cap()*100,1)+'% — below '+CFG.cashPct+'% target. Add SIP or reduce position size',
+            na_txt: '',
+            action: ''
+          },
+        ]
+      },
+      // Exit plan
+      {
+        group: 'Exit Plan (set before entering)',
+        items: [
+          {
+            q: 'Do you know your exit signal?',
+            ok: true,
+            na: false,
+            pass: '✓ Exit rule: Weekly close below Supertrend = EXIT immediately',
+            fail: '',
+            na_txt: '',
+            action: ''
+          },
+          {
+            q: 'Do you have profit booking levels set?',
+            ok: true,
+            na: false,
+            pass: '✓ Book 40% at +'+CFG.pb1+'% · Book 40% at +'+CFG.pb2+'% · Ride last 20%',
+            fail: '',
+            na_txt: '',
+            action: ''
+          },
+          {
+            q: 'Will you check this position every Sunday?',
+            ok: true,
+            na: false,
+            pass: '✓ Weekly review: refresh prices → check SL → check SPY → act if needed',
+            fail: '',
+            na_txt: '',
+            action: ''
+          },
+        ]
+      }
+    ];
+
+    // Count passes
+    const autoCheckable = checks.flatMap(g=>g.items).filter(i=>!i.na&&i.ok!==null);
+    const autoPassed = autoCheckable.filter(i=>i.ok===true).length;
+    const autoFailed = autoCheckable.filter(i=>i.ok===false).length;
+    const manualItems = checks.flatMap(g=>g.items).filter(i=>i.na).length;
+    const allAutoPassed = autoFailed === 0 && autoPassed > 0;
+
+    // Score banner
+    const bannerColor = allAutoPassed ? '#059669' : '#DC2626';
+    const bannerBg    = allAutoPassed ? '#ECFDF5' : '#FEF2F2';
+    const bannerTxt   = allAutoPassed
+      ? '✅ Auto-checks passed ('+autoPassed+'/'+autoPassed+'). Complete manual checks below before entering.'
+      : '⛔ '+autoFailed+' auto-check'+(autoFailed>1?'s':'')+' failed. Fix before entering any trade.';
+    html+='<div class="p-3" style="background:'+bannerBg+';border-bottom:1px solid #E3E8F0">';
+    html+='<div class="fw-bold" style="color:'+bannerColor+';font-size:13px">'+bannerTxt+'</div>';
+    html+='</div>';
+
+    checks.forEach(function(group) {
+      html+='<div class="px-3 pt-3 pb-1"><div style="font-size:10px;font-weight:700;color:#94A3B8;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">'+group.group+'</div>';
+      group.items.forEach(function(item) {
+        let statusIcon, statusColor, statusBg, statusText;
+        if (item.na || item.ok === null) {
+          statusIcon='○'; statusColor='#475569'; statusBg='#F0F3F9';
+          statusText = item.na_txt;
+        } else if (item.ok) {
+          statusIcon='✓'; statusColor='#059669'; statusBg='#ECFDF5';
+          statusText = item.pass;
+        } else {
+          statusIcon='✗'; statusColor='#DC2626'; statusBg='#FEF2F2';
+          statusText = item.fail;
+        }
+        html+='<div class="d-flex align-items-start gap-3 mb-3 p-2 rounded" style="background:'+statusBg+'">';
+        html+='<div style="width:22px;height:22px;border-radius:50%;background:'+statusColor+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px">'+statusIcon+'</div>';
+        html+='<div style="flex:1">';
+        html+='<div style="font-size:13px;font-weight:600;color:#0F172A;margin-bottom:2px">'+item.q+'</div>';
+        html+='<div style="font-size:12px;color:'+statusColor+'">'+statusText+item.action+'</div>';
+        html+='</div></div>';
+      });
+      html+='</div>';
+    });
+
+    // Final verdict
+    html+='<div class="p-3 border-top">';
+    // Collect failed conditions for verdict detail
+    const failedItems = [];
+    checks.forEach(function(group){
+      group.items.forEach(function(item){
+        if(!item.na && item.ok === false) {
+          failedItems.push({group: group.group, q: item.q, reason: item.fail});
+        }
+      });
+    });
+
+    if(allAutoPassed){
+      html+='<div class="p-3 rounded" style="background:#ECFDF5;border:1px solid #D1FAE5">';
+      html+='<div style="font-size:14px;font-weight:700;color:#059669;margin-bottom:4px">✅ Ready to Trade</div>';
+      html+='<div style="font-size:12px;color:#059669">All auto-checks passed. Complete the manual checks above, use the Position Sizer, then enter your trade.</div>';
+      html+='</div>';
+    } else {
+      html+='<div class="p-3 rounded" style="background:#FEF2F2;border:1px solid #FEE2E2">';
+      html+='<div style="font-size:14px;font-weight:700;color:#DC2626;margin-bottom:6px">⛔ Not Ready — '+autoFailed+' condition'+(autoFailed>1?'s':'')+' not met</div>';
+      // List each failed condition clearly
+      failedItems.forEach(function(f,i){
+        html+='<div class="d-flex align-items-start gap-2 mb-2 p-2 rounded" style="background:#fff;border:1px solid #FEE2E2">';
+        html+='<div style="width:20px;height:20px;border-radius:50%;background:#DC2626;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">'+(i+1)+'</div>';
+        html+='<div>';
+        html+='<div style="font-size:12px;font-weight:700;color:#DC2626">'+f.q+'</div>';
+        html+='<div style="font-size:11px;color:#DC2626;margin-top:2px">'+f.reason+'</div>';
+        html+='</div></div>';
+      });
+      html+='<div style="font-size:11px;color:#DC2626;margin-top:4px;font-style:italic">Patience is part of the system — wait for all checks to pass before entering.</div>';
+      html+='</div>';
+    }
+    html+='</div>';
+    html+='</div></div>';
   }
 
   // ── SCREENER ──
@@ -2067,6 +2785,131 @@ function r(){
     }
   }
 
+
+
+  // ── CRYPTO SCREENER ────────────────────────────────────────────────────────
+  if(TAB==='crypto'){
+    const activeCrypto = getActiveCrypto();
+    html+='<div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">';
+    html+='<div><h5 class="fw-bold mb-1"><i class="bi bi-currency-bitcoin me-2" style="color:#D97706"></i>Crypto Screener</h5>';
+    html+='<p class="text-muted mb-0" style="font-size:12px">Supertrend (10,3) weekly · '+activeCrypto.length+' coins · 24/7 market · Same Twelve Data keys</p></div>';
+    html+='<div class="d-flex gap-2">';
+    if(CRYPTO_CACHE.length&&!CRYPTO_SCANNING) html+='<button class="btn btn-sm btn-outline-secondary" onclick="CRYPTO_CACHE=[];ls.set();r()"><i class="bi bi-trash me-1"></i>Clear Cache</button>';
+    if(CRYPTO_SCANNING){
+      html+='<button class="btn btn-sm btn-danger" onclick="CRYPTO_ABORT=true;CRYPTO_SCANNING=false;r()"><i class="bi bi-stop-fill me-1"></i>Stop</button>';
+    } else {
+      const estSec = TDKEYS.length>0?Math.ceil(Math.ceil(activeCrypto.length/TDKEYS.length))*8:0;
+      const estStr = estSec===0?'?':estSec<60?estSec+'s':Math.ceil(estSec/60)+'min';
+      html+='<button class="btn btn-sm btn-warning text-dark fw-bold" onclick="runCryptoScreener()">';
+      html+='<i class="bi bi-search me-1"></i>'+(CRYPTO_CACHE.length?'Re-Scan':'Scan')+'  <small class="opacity-75">~'+estStr+'</small></button>';
+    }
+    html+='</div></div>';
+
+    // No keys warning
+    if(!TDKEYS.length){
+      html+='<div class="alert alert-warning" style="border-radius:10px;font-size:13px"><i class="bi bi-key-fill me-2"></i>Add Twelve Data keys in <strong>Settings</strong> to run the screener.</div>';
+    }
+
+    // ── Progress bar ──────────────────────────────────────────────────────────
+    if(CRYPTO_SCANNING){
+      const ep = CRYPTO_TOTAL>0?Math.round((CRYPTO_PROG/CRYPTO_TOTAL)*100):0;
+      const bullSoFar = CRYPTO_CACHE.filter(x=>x.bullish).length;
+      html+='<div class="card mb-3" style="border:1.5px solid #FDE68A"><div class="card-body">';
+      // Header
+      html+='<div class="d-flex justify-content-between align-items-center mb-2">';
+      html+='<span class="fw-bold" style="color:#D97706">';
+      html+='<span class="spinner-border spinner-border-sm me-2" style="width:12px;height:12px;border-width:2px;color:#D97706"></span>';
+      html+='Scanning '+activeCrypto.length+' crypto pairs…</span>';
+      html+='<span class="text-muted" style="font-size:12px">'+CRYPTO_PROG+' / '+CRYPTO_TOTAL+' · '+ep+'%</span>';
+      html+='</div>';
+      // Main bar
+      html+='<div class="progress mb-2" style="height:10px;border-radius:5px">';
+      html+='<div class="progress-bar progress-bar-striped progress-bar-animated" style="width:'+ep+'%;background:linear-gradient(90deg,#D97706,#F59E0B);border-radius:5px"></div>';
+      html+='</div>';
+      // Stats row
+      html+='<div class="row g-2 mb-2">';
+      html+='<div class="col-3"><div style="background:#ECFDF5;border-radius:8px;padding:6px;text-align:center"><div style="font-size:9px;color:#059669;font-weight:700">BULLISH</div><div style="font-size:16px;font-weight:900;color:#059669">'+bullSoFar+'</div></div></div>';
+      html+='<div class="col-3"><div style="background:#FEF2F2;border-radius:8px;padding:6px;text-align:center"><div style="font-size:9px;color:#DC2626;font-weight:700">BEARISH</div><div style="font-size:16px;font-weight:900;color:#DC2626">'+(CRYPTO_PROG-bullSoFar)+'</div></div></div>';
+      html+='<div class="col-3"><div style="background:#F0F3F9;border-radius:8px;padding:6px;text-align:center"><div style="font-size:9px;color:#475569;font-weight:700">SCANNED</div><div style="font-size:16px;font-weight:900;color:#475569">'+CRYPTO_PROG+'</div></div></div>';
+      html+='<div class="col-3"><div style="background:#FFFBEB;border-radius:8px;padding:6px;text-align:center"><div style="font-size:9px;color:#D97706;font-weight:700">REMAINING</div><div style="font-size:16px;font-weight:900;color:#D97706">'+(CRYPTO_TOTAL-CRYPTO_PROG)+'</div></div></div>';
+      html+='</div>';
+      // Worker dots
+      html+='<div class="d-flex gap-3 flex-wrap" style="font-size:11px;color:#94A3B8">';
+      const kc=['#2563EB','#059669','#D97706','#DC2626','#7C3AED'];
+      TDKEYS.forEach(function(k,i){ html+='<span><span style="color:'+kc[i%5]+';font-size:14px">⬤</span> Worker '+(i+1)+'</span>'; });
+      html+='</div>';
+      html+='</div></div>';
+    }
+
+    // ── Results ───────────────────────────────────────────────────────────────
+    if(CRYPTO_CACHE.length){
+      const bull=CRYPTO_CACHE.filter(x=>x.bullish);
+      const bear=CRYPTO_CACHE.filter(x=>!x.bullish);
+      const maxScore=bull.length?bull[0].score||1:1;
+
+      // Summary badges
+      html+='<div class="d-flex gap-2 mb-3 flex-wrap">';
+      html+='<span class="badge rounded-pill" style="background:#ECFDF5;color:#059669;border:1px solid #D1FAE5;font-size:12px;padding:6px 12px">🚀 '+bull.length+' Bullish</span>';
+      html+='<span class="badge rounded-pill" style="background:#FEF2F2;color:#DC2626;border:1px solid #FEE2E2;font-size:12px;padding:6px 12px">▼ '+bear.length+' Bearish</span>';
+      html+='<span class="text-muted" style="font-size:11px;padding:6px 0">Scanned '+CRYPTO_CACHE.length+'/'+activeCrypto.length+' · '+(CRYPTO_CACHE[0]?.scanned||'—')+'</span>';
+      html+='</div>';
+
+      // Bullish table
+      if(bull.length){
+        html+='<div class="card mb-3"><div class="card-header d-flex justify-content-between align-items-center">';
+        html+='<span>🚀 Bullish — Ranked by Momentum</span>';
+        html+='<span class="badge rounded-pill" style="background:#FFFBEB;color:#D97706;border:1px solid #FDE68A">'+bull.length+' coins</span>';
+        html+='</div><div class="table-responsive"><table class="table table-hover mb-0">';
+        html+='<thead><tr><th>#</th><th>Coin</th><th>Category</th><th>Price</th><th>ST Line</th><th>Dist</th><th>4W ROC</th><th>13W ROC</th><th>Score</th></tr></thead><tbody>';
+        bull.forEach(function(c,i){
+          const cc=CRYPTO_CAT_COLORS[c.cat]||'#64748B';
+          const bw=maxScore>0?Math.round((c.score/maxScore)*100):0;
+          html+='<tr>';
+          html+='<td style="font-weight:800;color:'+(i<3?'#D97706':'#94A3B8')+'">'+(i+1)+'</td>';
+          html+='<td><div class="d-flex align-items-center gap-2"><strong style="font-size:14px">'+c.symbol.split('/')[0]+'</strong><span style="font-size:11px;color:#94A3B8">'+c.name+'</span></div></td>';
+          html+='<td><span style="font-size:10px;font-weight:700;color:'+cc+';background:'+cc+'18;border:1px solid '+cc+'33;padding:2px 7px;border-radius:12px">'+c.cat+'</span></td>';
+          const fmt=n=>n>100?'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'$'+n.toFixed(n>1?4:6);
+          html+='<td class="fw-semibold">'+fmt(c.lastClose)+'</td>';
+          html+='<td class="text-muted">'+fmt(c.lastST)+'</td>';
+          html+='<td><span class="fw-bold" style="color:var(--me-green)">+'+c.distPct.toFixed(1)+'%</span></td>';
+          html+='<td><span class="fw-bold" style="color:'+(c.roc4>=0?'var(--me-green)':'var(--me-red)')+';">'+(c.roc4>=0?'+':'')+c.roc4.toFixed(1)+'%</span></td>';
+          html+='<td><span class="fw-bold" style="color:'+(c.roc13>=0?'var(--me-green)':'var(--me-red)')+';">'+(c.roc13>=0?'+':'')+c.roc13.toFixed(1)+'%</span></td>';
+          html+='<td style="min-width:100px"><div class="d-flex align-items-center gap-2"><div class="momentum-bar flex-grow-1"><div style="height:100%;width:'+bw+'%;background:linear-gradient(90deg,#D97706,#F59E0B);border-radius:3px"></div></div><span style="font-size:11px;font-weight:700;color:#D97706">'+c.score.toFixed(1)+'</span></div></td>';
+          html+='</tr>';
+        });
+        html+='</tbody></table></div></div>';
+      }
+
+      // Bearish table
+      if(bear.length){
+        html+='<div class="card"><div class="card-header d-flex justify-content-between align-items-center" style="color:var(--me-red)">';
+        html+='<span>⚠ Bearish — Supertrend Negative</span>';
+        html+='<span class="badge rounded-pill bg-danger">'+bear.length+'</span>';
+        html+='</div><div class="table-responsive"><table class="table table-hover mb-0">';
+        html+='<thead><tr><th>Coin</th><th>Category</th><th>Price</th><th>4W ROC</th><th>13W ROC</th></tr></thead><tbody>';
+        bear.forEach(function(c){
+          const cc=CRYPTO_CAT_COLORS[c.cat]||'#64748B';
+          const fmt=n=>n>100?'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'$'+n.toFixed(n>1?4:6);
+          html+='<tr style="background:#FEF2F2">';
+          html+='<td><div class="d-flex align-items-center gap-2"><strong>'+c.symbol.split('/')[0]+'</strong><span style="font-size:11px;color:#94A3B8">'+c.name+'</span></div></td>';
+          html+='<td><span style="font-size:10px;font-weight:700;color:'+cc+';background:'+cc+'18;border:1px solid '+cc+'33;padding:2px 7px;border-radius:12px">'+c.cat+'</span></td>';
+          html+='<td>'+fmt(c.lastClose)+'</td>';
+          html+='<td style="color:var(--me-red);font-weight:700">'+(c.roc4>=0?'+':'')+c.roc4.toFixed(1)+'%</td>';
+          html+='<td style="color:var(--me-red);font-weight:700">'+(c.roc13>=0?'+':'')+c.roc13.toFixed(1)+'%</td>';
+          html+='</tr>';
+        });
+        html+='</tbody></table></div></div>';
+      }
+
+    } else if(!CRYPTO_SCANNING){
+      html+='<div class="card"><div class="card-body text-center py-5">';
+      html+='<i class="bi bi-currency-bitcoin" style="font-size:48px;color:#D97706"></i>';
+      html+='<h6 class="mt-3 fw-bold">No crypto scan yet</h6>';
+      html+='<p class="text-muted mb-3" style="font-size:13px">'+activeCrypto.length+' coins · Supertrend (10,3) weekly · Crypto market open 24/7 — scan anytime</p>';
+      html+=TDKEYS.length?'<button class="btn btn-warning text-dark fw-bold" onclick="runCryptoScreener()"><i class="bi bi-search me-1"></i>Scan Crypto Now</button>':'<button class="btn btn-success" onclick="showTDKeyModal()"><i class="bi bi-key me-1"></i>Add Keys First</button>';
+      html+='</div></div>';
+    }
+  }
 
   // ── ETF PORTFOLIO ──
   if(TAB==='etf'){
@@ -2326,9 +3169,42 @@ function r(){
     html+='<button class="btn btn-sm btn-outline-secondary mt-2 w-100" onclick="umResetETF()"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Default ('+ETF_UNIVERSE.length+' ETFs)</button>';
     html+='</div>';
 
-    html+='</div>'; // row
+    html+='</div>'; // end SP500+ETF row
+
+    // ── Crypto Universe panel ──
+    html+='<div style="border-top:1px solid #E3E8F0;margin-top:16px;padding-top:16px">';
+    html+='<div style="font-size:11px;font-weight:700;color:#94A3B8;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px"><i class="bi bi-currency-bitcoin me-1" style="color:#D97706"></i>Crypto Universe <span class="badge bg-warning text-dark rounded-pill ms-1">'+getActiveCrypto().length+' coins</span></div>';
+    html+='<div class="row g-3">';
+    html+='<div class="col-md-4">';
+    html+='<div class="inp-label">Add Coin (symbol)</div>';
+    html+='<div class="d-flex gap-1 mb-2"><input type="text" id="um-crypto-add" class="form-control form-control-sm" placeholder="BTC or BTC/USD" style="text-transform:uppercase"/><button class="btn btn-sm btn-success" onclick="umDoAddCrypto()">+</button></div>';
+    html+='<div class="inp-label">Name (optional)</div>';
+    html+='<div class="d-flex gap-1 mb-2"><input type="text" id="um-crypto-name" class="form-control form-control-sm" placeholder="Bitcoin"/>';
+    html+='<select id="um-crypto-cat" class="form-select form-select-sm" style="max-width:100px"><option>Mega Cap</option><option>Large Cap</option><option>DeFi</option><option>Layer 1</option><option>Layer 2</option><option>AI/Tech</option><option>Custom</option></select></div>';
+    html+='</div>';
+    html+='<div class="col-md-4">';
+    html+='<div class="inp-label">Remove Coin</div>';
+    html+='<div class="d-flex gap-1 mb-2"><input type="text" id="um-crypto-rem" class="form-control form-control-sm" placeholder="ETH or ETH/USD" style="text-transform:uppercase"/><button class="btn btn-sm btn-danger" onclick="umDoRemCrypto()">−</button></div>';
+    html+='<div class="inp-label">Batch Add (comma/newline)</div>';
+    html+='<textarea id="um-crypto-batch" class="form-control form-control-sm" rows="2" placeholder="SUI, TAO, FET&#10;INJ, TIA"></textarea>';
+    html+='<button class="btn btn-sm btn-outline-primary mt-1" onclick="umDoBatchCrypto()"><i class="bi bi-upload me-1"></i>Import Batch</button>';
+    html+='</div>';
+    html+='<div class="col-md-4">';
+    if(CUSTOM_CRYPTO.length){
+      html+='<div style="font-size:10px;font-weight:700;color:#94A3B8;letter-spacing:.08em;margin-bottom:4px">YOUR CHANGES</div>';
+      CUSTOM_CRYPTO.slice(0,6).forEach(function(c){
+        html+='<div class="d-flex justify-content-between align-items-center py-1" style="border-top:1px solid #F0F3F9;font-size:12px">';
+        html+='<span><span class="badge rounded-pill '+(c.action==='add'?'bg-success':'bg-danger')+' me-1">'+(c.action==='add'?'+':'−')+'</span>'+c.symbol+'</span>';
+        html+='<button class="btn btn-sm btn-link text-muted py-0" style="font-size:11px" onclick="umUndoCrypto(this.dataset.s)" data-s="'+c.symbol+'">undo</button>';
+        html+='</div>';
+      });
+      if(CUSTOM_CRYPTO.length>6) html+='<div style="font-size:11px;color:#94A3B8">+'+(CUSTOM_CRYPTO.length-6)+' more</div>';
+    }
+    html+='<button class="btn btn-sm btn-outline-secondary mt-2 w-100" onclick="umResetCrypto()"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Default ('+CRYPTO.length+' coins)</button>';
+    html+='</div></div></div>'; // end crypto panel
+
     html+='<div class="mt-3 p-2 rounded" style="background:#F0F3F9;border:1px solid #E3E8F0;font-size:11px;color:#475569">';
-    html+='<i class="bi bi-lightbulb me-1 text-warning"></i><strong>Keeping updated:</strong> S&amp;P 500 rebalances quarterly (Mar/Jun/Sep/Dec). Check <a href="https://www.spglobal.com/spdji/en/indices/equity/sp-500/" target="_blank">S&amp;P Global</a> for changes. Add new stocks, remove dropped ones. ETFs: add new launches, remove closed funds anytime.';
+    html+='<i class="bi bi-lightbulb me-1 text-warning"></i><strong>Keeping updated:</strong> S&amp;P 500 rebalances quarterly (Mar/Jun/Sep/Dec). Check <a href="https://www.spglobal.com/spdji/en/indices/equity/sp-500/" target="_blank">S&amp;P Global</a> for changes. Crypto: add any coin using ticker+/USD format (e.g. SUI/USD).';
     html+='</div>';
     html+='</div></div>';
   }
@@ -2347,7 +3223,7 @@ function r(){
   // Badge dots
   const hasDanger = (alerts||[]).filter(a=>a.t==='danger').length>0;
   const hasPending = ss.filter(s=>s.act).length>0;
-  ['dashboard','positions','profit','sip','screener','watchlist','etf','log','settings'].forEach(id=>{
+  ['dashboard','positions','profit','sip','planner','screener','watchlist','crypto','etf','log','settings'].forEach(id=>{
     const b = document.getElementById('tab-'+id+'-badge');
     if(!b) return;
     if(id==='dashboard' && hasDanger) b.style.display='block';
@@ -2356,6 +3232,7 @@ function r(){
   });
   if(window._addForm){const el=document.getElementById('addFormWrap');if(el)el.style.display='block';}
 }
+
 
 window._addForm=false; window._sipForm=false;
 init(); r();
